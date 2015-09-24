@@ -1,0 +1,150 @@
+<!DOCTYPE HTML>
+<html>
+<!-- head -->
+<head>
+	<title>Boba Database</title>
+	<!-- Libraries -->
+	<!-- jQuery -->
+	<script src="http://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
+	<!-- Bootstrap-->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+	
+	<!-- Blog JSON -->
+	<script type="text/javascript" src="http://bobahol1c.tumblr.com/api/read/json"></script>
+
+	<!-- Datatables.net -->
+	<script type="text/javascript" src="http://cdn.datatables.net/1.10.9/js/jquery.dataTables.min.js"></script>
+	<link rel="stylesheet" href="http://cdn.datatables.net/1.10.9/css/jquery.dataTables.min.css">
+	<style>
+	body {
+		font-family: "Georgia";
+	}
+	</style>
+</head>
+
+<!-- body -->
+<body>
+	<script>
+	var blogURL = "bobahol1c.tumblr.com";
+	var key = "TZub4n8UjLottoPixVOiuaedIB0xJLW8Fq7HBQruuUXfS9vege";
+	var offset = 0;
+	var posts_left = true;
+	var apiURL = "http://api.tumblr.com/v2/blog/" + blogURL + "/posts?api_key=" + key;
+	var text = '';
+	var tableData = '';
+	var totalPosts = 225;
+
+	function getData(){
+	for(var i = 0; i < totalPosts; i = i + 20){
+		console.log("totalposts is " + totalPosts);
+		console.log("offset is " + offset);
+		$.ajax({
+	    	url: apiURL + "&offset=" + offset.toString(),
+	    	dataType: 'jsonp',
+	    	success: function(posts){ //what to do when posts are retrieved
+   				//var total_posts = posts.response.total_posts;
+   				var postings = posts.response.posts;
+   				/* show each of the 20 posts */
+				for (var i in postings) {
+					var p = postings[i];
+					var caption = p.caption;
+					/* if the entry is a valid rating blog post */
+					if(caption != ""){
+						var postTitle = caption.substr(caption.indexOf('>')+1,caption.indexOf('/')-1);
+						// var hyphen = "-";
+						// console.log("hyphen" + caption.substr(0,caption.indexOf("-")));
+						//console.log("hypen is at:" + postTitle.charCodeAt(6));
+						//console.log("hypen at: " + postTitle.indexOf('/'));
+						text += '<li><img src=' + p.photos[0].original_size.url +' width=200><a href='+p.post_url+'>'+postTitle+'</a></li>';
+						/* Rating */
+						var rating = caption.substr(caption.lastIndexOf("/10")-4);
+						/*remove characters that aren't numbers from beginning*/
+						rating = rating.split('>')[1];
+						/*blank space if not a rating */
+						if(rating.indexOf("/10") == -1){
+							rating = "N/A";
+						}
+
+						/* Location */
+						var location = "";
+						if(caption.indexOf("Location:") > -1){
+							location = caption.substr(caption.indexOf("Location:")+10);
+							location = location.substr(0, location.indexOf(")"));
+						}
+						else{
+							location = "N/A";
+						}
+
+						/* Date Posted */
+						var date = "";
+						date = p.date.substr(0,10);
+
+						/* add data to table */
+						tableData += '<tr><td><a href="' + p.post_url + '">' + postTitle + '</a></td><td>' + location + '</td><td>' + rating + '</td><td>' + date + '</td></tr>';
+					} //end entry if loop
+				} //end for loop each post
+					$('#tableBody').append(tableData);
+					//$('ul').append(text);
+			} //success function end
+		}); //end ajax
+		//get next 20 posts
+		offset += 20;
+		if (offset > totalPosts){
+			posts_left = false;
+		}
+	} //end for loop
+	$('#bobaTable').DataTable();
+
+}
+
+	$(document).ready(function(){
+		/* get all blog posts */
+		$.ajax({
+			url: apiURL,
+			dataType: 'jsonp',
+			success:function(p){
+				totalPosts = tumblr_api_read['posts-total']; // total posts
+			}
+		});
+		getData();
+	});
+	</script>
+
+	<h1></h1>
+	<img src="" class="img">
+	<span class="followers"></span>
+	
+	<table id="bobaTable" class="display" cellspacing="0" width="100%">
+		<thead>
+            <tr>
+                <th>Boba Place - Drink</th>
+                <th>Location</th>
+                <th>Rating</th>
+                <th>Date Posted</th>
+            </tr>
+        </thead>
+
+        <tbody id="tableBody">
+        	<tr><td>Test</td>
+        		<td>Hi</td>
+        		<td>asdfg</td>
+        		<td>qwerty</td>
+        	</tr>
+        </tbody>
+
+        <tfoot>
+            <tr>
+                <th>Boba Place - Drink</th>
+                <th>Location</th>
+                <th>Rating</th>
+                <th>Date Posted</th>
+            </tr>
+        </tfoot>    
+	</table>
+  	
+<!--   	<ul>
+  	</ul> -->
+</body>
+</html>
