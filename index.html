@@ -16,6 +16,7 @@
 
 	<!-- Datatables.net -->
 	<script type="text/javascript" src="http://cdn.datatables.net/1.10.9/js/jquery.dataTables.min.js"></script>
+	<script type="text/javascript" src="http://cdn.datatables.net/plug-ins/1.10.9/sorting/natural.js"></script>
 	<link rel="stylesheet" href="http://cdn.datatables.net/1.10.9/css/jquery.dataTables.min.css">
 	<style>
 	body {
@@ -27,123 +28,106 @@
 <!-- body -->
 <body>
 	<script>
-	var blogURL = "bobahol1c.tumblr.com";
+	var hostname = "bobahol1c.tumblr.com";
 	var key = "TZub4n8UjLottoPixVOiuaedIB0xJLW8Fq7HBQruuUXfS9vege";
-	var offset = 0;
-	var posts_left = true;
-	var apiURL = "http://api.tumblr.com/v2/blog/" + blogURL + "/posts?api_key=" + key;
+	var apiURL = "http://api.tumblr.com/v2/blog/" + hostname + "/posts?api_key=" + key;
 	var text = '';
 	var tableData = '';
-	var totalPosts = 225;
+	var totalPosts = 0;
+	var offset = 0;
+	var posts_left = true;
+	var jsonData = [];
 
-	function getData(){
-	for(var i = 0; i < totalPosts; i = i + 20){
-		console.log("totalposts is " + totalPosts);
-		console.log("offset is " + offset);
-		$.ajax({
-	    	url: apiURL + "&offset=" + offset.toString(),
-	    	dataType: 'jsonp',
-	    	success: function(posts){ //what to do when posts are retrieved
-   				//var total_posts = posts.response.total_posts;
-   				var postings = posts.response.posts;
-   				/* show each of the 20 posts */
-				for (var i in postings) {
-					var p = postings[i];
-					var caption = p.caption;
-					/* if the entry is a valid rating blog post */
-					if(caption != ""){
-						var postTitle = caption.substr(caption.indexOf('>')+1,caption.indexOf('/')-1);
-						// var hyphen = "-";
-						// console.log("hyphen" + caption.substr(0,caption.indexOf("-")));
-						//console.log("hypen is at:" + postTitle.charCodeAt(6));
-						//console.log("hypen at: " + postTitle.indexOf('/'));
-						text += '<li><img src=' + p.photos[0].original_size.url +' width=200><a href='+p.post_url+'>'+postTitle+'</a></li>';
-						/* Rating */
-						var rating = caption.substr(caption.lastIndexOf("/10")-4);
-						/*remove characters that aren't numbers from beginning*/
-						rating = rating.split('>')[1];
-						/*blank space if not a rating */
-						if(rating.indexOf("/10") == -1){
-							rating = "N/A";
-						}
+function getJSON(offset){
+    var url = "http://api.tumblr.com/v2/blog/bobahol1c.tumblr.com/posts?api_key=lOw87K3wRtth6DkWb2blUuA78qgTxzSYTRLdvNlDLKHYfVvyUP&limit=20&offset=" + offset + "&callback=?";
+    $.getJSON(url, function (results) {
+        $.each(results.response.posts, function (i, item) {
+            var src = item.photos[0].alt_sizes[3].url; // first picture, first size
+            var caption = item.caption;
+            // $("<img/>").attr("src", src).appendTo("#submissions").wrap('<div class="postImage"></div>').after('<span class="postCaption">' + caption + '</div>');
+			if(caption != ""){
+			var postTitle = caption.substr(caption.indexOf('>')+1,caption.indexOf('/')-1);
+			// var hyphen = "-";
+			// console.log("hyphen" + caption.substr(0,caption.indexOf("-")));
+			//console.log("hypen is at:" + postTitle.charCodeAt(6));
+			//console.log("hypen at: " + postTitle.indexOf('/'));
+			//text += '<li><img src=' + item.photos[0].original_size.url +' width=200><a href='+item.post_url+'>'+postTitle+'</a></li>';
+			var postURL = item.post_url;
 
-						/* Location */
-						var location = "";
-						if(caption.indexOf("Location:") > -1){
-							location = caption.substr(caption.indexOf("Location:")+10);
-							location = location.substr(0, location.indexOf(")"));
-						}
-						else{
-							location = "N/A";
-						}
+			/* Rating */
+			var rating = caption.substr(caption.lastIndexOf("/10")-4);
+			/*remove characters that aren't numbers from beginning*/
+			rating = rating.split('>')[1];
+			/*blank space if not a rating */
+			if(rating.indexOf("/10") == -1){
+				rating = "N/A";
+			}
 
-						/* Date Posted */
-						var date = "";
-						date = p.date.substr(0,10);
+			/* Location */
+			var location = "";
+			if(caption.indexOf("Location:") > -1){
+				location = caption.substr(caption.indexOf("Location:")+10);
+				location = location.substr(0, location.indexOf(")"));
+			}
+			else{
+				location = "See blog post";
+			}
 
-						/* add data to table */
-						tableData += '<tr><td><a href="' + p.post_url + '">' + postTitle + '</a></td><td>' + location + '</td><td>' + rating + '</td><td>' + date + '</td></tr>';
-					} //end entry if loop
-				} //end for loop each post
-					$('#tableBody').append(tableData);
-					//$('ul').append(text);
-			} //success function end
-		}); //end ajax
-		//get next 20 posts
-		offset += 20;
-		if (offset > totalPosts){
-			posts_left = false;
-		}
-	} //end for loop
-	$('#bobaTable').DataTable();
+			/* Date Posted */
+			var date = "";
+			date = item.date.substr(0,10);
 
+			/* add data to table */
+			if(rating == "N/A" && postTitle.search(/bonus/i) != -1){
+				//do not add to DB if rating N/A & bonus post 
+			}
+			else{
+				jsonData[jsonData.length] = [postTitle, location, rating, date, postURL];
+			tableData += '<tr><td><a href="' + item.post_url + '">' + postTitle + '</a></td><td>' + location + '</td><td>' + rating + '</td><td>' + date + '</td></tr>';
+			}
+		} //end entry if loop
+        });
+        if (offset <= totalPosts) {
+        	offset +=20;
+            getJSON(offset);
+        }
+        else{
+        			$('#bobaTable').DataTable( {
+        data: jsonData,
+        columns: [
+            { title: "Boba Place - Drink",
+            	"fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+            $(nTd).html("<a href='" + oData[4] + "'>" + sData + "</a>");
+        }},
+            { title: "Location" },
+            { title: "Rating" },
+            { title: "Date Posted" }
+        ],
+        columnDefs: [
+        	{ type: 'natural', targets: 2 }
+        ]
+    });
+        }
+    });
+	//$('#tableBody').append(tableData);
+	//$('#bobaTable').DataTable();
 }
 
 	$(document).ready(function(){
-		/* get all blog posts */
-		$.ajax({
-			url: apiURL,
-			dataType: 'jsonp',
-			success:function(p){
-				totalPosts = tumblr_api_read['posts-total']; // total posts
-			}
-		});
-		getData();
+		/* get total number of posts in blog */
+		totalPosts = tumblr_api_read['posts-total'];
+		getJSON(0);
+
 	});
+
 	</script>
-
-	<h1></h1>
-	<img src="" class="img">
-	<span class="followers"></span>
-	
-	<table id="bobaTable" class="display" cellspacing="0" width="100%">
-		<thead>
-            <tr>
-                <th>Boba Place - Drink</th>
-                <th>Location</th>
-                <th>Rating</th>
-                <th>Date Posted</th>
-            </tr>
-        </thead>
-
-        <tbody id="tableBody">
-        	<tr><td>Test</td>
-        		<td>Hi</td>
-        		<td>asdfg</td>
-        		<td>qwerty</td>
-        	</tr>
-        </tbody>
-
-        <tfoot>
-            <tr>
-                <th>Boba Place - Drink</th>
-                <th>Location</th>
-                <th>Rating</th>
-                <th>Date Posted</th>
-            </tr>
-        </tfoot>    
-	</table>
-  	
+	<center>
+	<h1>Bobahol1c Database</h1>
+	<div id="tableDiv" width="80%">
+		<table id="bobaTable" class="display">
+		</table>
+	</div>
+  	<br><br>
 <!--   	<ul>
   	</ul> -->
 </body>
