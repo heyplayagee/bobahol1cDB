@@ -1,5 +1,7 @@
 # bobahol1cDB
-Find tasty boba from Steven Cong's bobahol1c.tumblr.com
+The final product: http://heyplayagee.github.io/bobahol1cDB/
+
+Find tasty boba from Steven Cong's bobahol1c.tumblr.com in an easy-to-read database! 
 
 When I saw the <a href="http://dailybruin.com/2015/09/19/ucla-graduate-student-tastes-tea-to-build-boba-database/">UCLA Bruins article</a> shared on Facebook about a boba database, I had to view it. Steven Cong posts his experiences at many boba places around California.
 
